@@ -1,0 +1,104 @@
+<?php
+
+/**
+ * @file
+ * Contains imagine_custom.module.
+ */
+
+/**
+ * Implements hook_editor_js_settings_alter().
+ */
+function imagine_custom_editor_js_settings_alter(array &$settings): void {
+  $format_id = 'folwell_ckeditor';
+
+  if (!isset($settings['editor']['formats'][$format_id])) {
+    return;
+  }
+
+  $format = &$settings['editor']['formats'][$format_id];
+
+  // Guard: only touch CKEditor 5. Bailing out here avoids corrupting the
+  // settings of any other editor that might be assigned to this format.
+  if (($format['editor'] ?? NULL) !== 'ckeditor5') {
+    return;
+  }
+
+  // ---------------------------------------------------------------------
+  // Style definitions.
+  //
+  // IMPORTANT: 'classes' MUST be a zero-indexed, sequential PHP array.
+  // drupalSettings is serialized with json_encode(), which only emits a JSON
+  // array when the keys are 0..n-1 in order. Any other keys (e.g. [1 => 'x'])
+  // serialize to a JSON *object*, which CKEditor 5 stringifies as
+  // class="[object Object]". Never write explicit numeric keys here.
+  // ---------------------------------------------------------------------
+  $styles = [
+    [
+      'name' => 'Badge',
+      'element' => 'p',
+      'classes' => ['badge'],
+    ],
+    [
+      'name' => 'Gray Text',
+      'element' => 'p',
+      'classes' => ['muted-text'],
+    ],
+    [
+      'name' => 'Small Maroon Text',
+      'element' => 'p',
+      'classes' => ['small-maroon-text'],
+    ],
+    [
+      'name' => 'Small Caps Label',
+      'element' => 'p',
+      'classes' => ['small-caps'],
+    ],
+  ];
+
+  $existing_styles = $format['editorSettings']['config']['style']['definitions'] ?? [];
+
+  // Deduplicate by style name, so re-running this hook over its own output
+  // -- which happens when editor settings are rebuilt per field or per AJAX
+  // request -- can never accumulate duplicates. Later entries replace
+  // earlier ones. array_values() re-indexes so the result serializes as a
+  // JSON array.
+  $deduped = [];
+  foreach (array_merge($existing_styles, $styles) as $definition) {
+    $deduped[$definition['name']] = $definition;
+  }
+  $format['editorSettings']['config']['style']['definitions'] = array_values($deduped);
+
+  // ---------------------------------------------------------------------
+  // Link decorators.
+  //
+  // config.link.decorators is an OBJECT keyed by decorator name, not a list.
+  // The key becomes the model attribute name (here: linkImagineGrayButton).
+  // Use the dedicated 'classes' property rather than attributes['class'] --
+  // CKEditor handles the class attribute separately and the two conflict.
+  // The union operator (+) preserves string keys and is naturally
+  // idempotent, so decorators never duplicate.
+  // ---------------------------------------------------------------------
+  $decorators = [
+    'imagineGrayButton' => [
+      'mode' => 'manual',
+      'label' => 'IMAGINE Gray Button',
+      'defaultValue' => FALSE,
+      'classes' => ['imagine-btn'],
+    ],
+  ];
+
+  $existing_decorators = $format['editorSettings']['config']['link']['decorators'] ?? [];
+  $format['editorSettings']['config']['link']['decorators'] = $existing_decorators + $decorators;
+}
+
+/**
+ * Implements hook_library_info_alter().
+ *
+ * Core only reads ckeditor5-stylesheets from themes, not modules, so the
+ * editor stylesheet is attached as a dependency of CKEditor 5 itself.
+ */
+function imagine_custom_library_info_alter(array &$libraries, $extension): void {
+  if ($extension === 'ckeditor5' && isset($libraries['internal.drupal.ckeditor5'])) {
+    $libraries['internal.drupal.ckeditor5']['dependencies'][] = 'imagine_custom/editor_styles';
+  }
+}

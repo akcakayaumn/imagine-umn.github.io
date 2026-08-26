@@ -1,0 +1,25 @@
+{#
+/**
+ * @file
+ * Default theme implementation for a single paragraph item.
+ * ...
+ */
+#}
+{% set columns = paragraph.field_cards_columns.value %}
+{%
+  set classes = [
+    'paragraph',
+    'paragraph--type--' ~ paragraph.bundle|clean_class,
+    columns ? 'paragraph--columns-' ~ columns : '',
+    paragraph.isPublished() ? '' : 'paragraph--unpublished',
+  ]
+%}
+{% block paragraph %}
+  <div{{ attributes.addClass(classes) }}>
+    {% block content %}
+      <div{{ content_attributes.addClass('paragraph__content') }}>
+        {{ content|without('field_cards_columns') }}
+      </div>
+    {% endblock %}
+  </div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{#
+/**
+ * @file
+ * Card-styled override for the Card Content field on the Cards paragraph.
+ */
+#}
+{% if items %}
+  <div{{ attributes.addClass('card-content-list') }}>
+    {% for item in items %}
+      <div{{ item.attributes.addClass('card-content-item') }}>
+        {{ item.content }}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}

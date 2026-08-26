@@ -1,0 +1,21 @@
+{# 
+  File: field--node--field-roles-dates.html.twig
+  This overrides just this specific field and loops through all items automatically.
+#}
+{# field--node--field-roles-dates--members.html.twig #}
+
+{% set items_clean = [] %}
+
+{% for item in items %}
+  {# 1. Render to string #}
+  {# 2. Strip HTML debug comments if any exist #}
+  {# 3. Trim all leading/trailing whitespace #}
+  {% set clean_text = item.content|render|striptags|trim %}
+  
+  {% if clean_text is not empty %}
+    {% set items_clean = items_clean|merge([clean_text]) %}
+  {% endif %}
+{% endfor %}
+
+{# Join purely clean strings with '; ' #}
+{{ items_clean|join('; ') }}

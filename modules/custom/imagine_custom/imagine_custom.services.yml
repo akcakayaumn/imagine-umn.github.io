@@ -1,0 +1,11 @@
+# OPTIONAL: only has an effect when the shared text format uses the
+# "Limit allowed HTML tags" (filter_html) filter, in which case the classes
+# injected into CKEditor would otherwise be stripped on render. Safe to keep
+# either way; delete this file and src/ImagineFilterOverrides.php if the
+# format does not use filter_html.
+services:
+  imagine_custom.filter_overrides:
+    class: Drupal\imagine_custom\ImagineFilterOverrides
+    arguments: ['@config.storage']
+    tags:
+      - { name: config.factory.override, priority: 5 }

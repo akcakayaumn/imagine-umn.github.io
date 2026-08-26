@@ -1,0 +1,6 @@
+# CSS-only library: no dependencies needed.
+editor_styles:
+  version: 1.x
+  css:
+    theme:
+      css/imagine-ckeditor5.css: {}

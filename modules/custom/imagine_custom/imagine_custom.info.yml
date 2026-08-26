@@ -1,0 +1,9 @@
+name: Imagine Custom
+type: module
+description: 'Custom module for IMAGINE Lab website: CKEditor 5 text styles and link decorators.'
+core_version_requirement: ^10 || ^11
+package: Custom
+dependencies:
+  - drupal:ckeditor5
+  - drupal:editor
+  - paragraphs:paragraphs

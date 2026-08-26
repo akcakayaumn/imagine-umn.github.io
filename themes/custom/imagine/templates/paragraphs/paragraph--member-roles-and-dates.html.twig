@@ -1,0 +1,24 @@
+{#
+   The "Member Roles" field in the Members content type
+   is an unlimited list of three fields, role title, start year, and end year
+#}
+
+{# paragraph--member-roles-and-dates.html.twig #}
+
+{# 1. Extract values as clean, safe strings using .value or .getString() #}
+{% set role = paragraph.field_member_role.value|render|trim %}
+{% set start = paragraph.field_member_start.value ? paragraph.field_member_start.getString()|trim : '' %}
+{% set end = paragraph.field_member_end.value ? paragraph.field_member_end.getString()|trim : '' %}
+
+{# 2. Construct the dates portion cleanly #}
+{% set date_string = '' %}
+{% if start and not end %}
+  {% set date_string = '(' ~ start ~ '—)' %}
+{% elseif start and end %}
+  {% set date_string = '(' ~ start ~ '-' ~ end ~ ')' %}
+{% elseif end %}
+  {% set date_string = '(' ~ end ~ ')' %}
+{% endif %}
+
+{# 3. Print role and dates tightly as a single string #}
+{{- role -}}{{- date_string ? ' ' ~ date_string : '' -}}
