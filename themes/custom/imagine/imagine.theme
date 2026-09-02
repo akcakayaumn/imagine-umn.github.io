@@ -24,92 +24,103 @@ function imagine_preprocess_html(&$variables) {
 }
 
 function imagine_preprocess_field(&$variables) {
-  // Make adjustments to the alumni list's website links
+
+  // Make adjustments to the alumni list's website links.
   if ($variables['field_name'] === 'field_alumni_websites') {
-    
-    // Get the parent Paragraph entity (Alumni) that holds this field
+
+    // Get the parent Paragraph entity (Alumni) that holds this field.
     $paragraph = $variables['element']['#object'];
-    
-    // Retrieve the Alumnus's Name from the sibling field
+
+    // Retrieve the Alumnus's name from the sibling field.
     $name = '';
     if ($paragraph->hasField('field_alumni_name') && !$paragraph->get('field_alumni_name')->isEmpty()) {
-      $name = trim($paragraph->get('field_alumni_name')->value);
+      $name = trim((string) $paragraph->get('field_alumni_name')->value);
     }
 
-    // Loop through each link item rendering array
+    // Loop through each link item rendering array.
     foreach ($variables['items'] as $delta => &$item) {
-      // Ensure we are working with a valid link render structure
+
+      // Ensure we are working with a valid link render structure.
       if (isset($item['content']['#type']) && $item['content']['#type'] === 'link') {
-        
-        // Grab the individual link's title (e.g. "LinkedIn" or "Website")
-        $link_title = $item['content']['#title'];
-        
-        // Build the custom aria label
-        $custom_aria = !empty($name) ? $name . "'s " . $link_title : $link_title;
-        
-        // Add the aria-label directly onto the <a> tag options
-        $item['content']['#options']['attributes']['aria-label'] = $custom_aria;
-        
-        // Initialize the class array if it doesn't exist
+
+        // Grab the individual link's title (e.g. "LinkedIn" or "Website").
+        $link_title = trim((string) $item['content']['#title']);
+
+        // Build the custom aria label: "LinkedIn for [Person's Name]".
+        $custom_aria = ($name !== '' && $link_title !== '')
+          ? $link_title . ' for ' . $name
+          : $link_title;
+
+        // Add the aria-label directly onto the <a> tag options.
+        if ($custom_aria !== '') {
+          $item['content']['#options']['attributes']['aria-label'] = $custom_aria;
+        }
+
+        // Initialize the class array if it doesn't exist.
         if (!isset($item['content']['#options']['attributes']['class'])) {
           $item['content']['#options']['attributes']['class'] = [];
         }
-        
-        // Add custom button style to these links
+
+        // Add custom button style to these links.
         $item['content']['#options']['attributes']['class'][] = 'imagine-btn';
       }
     }
+    // Break the reference from the loop above.
+    unset($item);
   }
 
-  // Make adjustments to the members roles and dates field
-  if ($variables['element']['#field_name'] === 'field_roles_dates') {
+  // Make adjustments to the members roles and dates field.
+  if ($variables['field_name'] === 'field_roles_dates') {
     $clean_roles = [];
 
-    // Loop through each paragraph item in the field
+    // Loop through each paragraph item in the field.
     foreach ($variables['items'] as $delta => $item) {
-      // Get the paragraph entity directly from the render element
+
+      // Get the paragraph entity directly from the render element.
       if (isset($item['content']['#paragraph'])) {
         /** @var \Drupal\paragraphs\Entity\Paragraph $paragraph */
         $paragraph = $item['content']['#paragraph'];
 
-        // Extract role
-        $role = $paragraph->hasField('field_member_role') && !$paragraph->get('field_member_role')->isEmpty() 
-          ? trim($paragraph->get('field_member_role')->value) 
+        // Extract role.
+        $role = $paragraph->hasField('field_member_role') && !$paragraph->get('field_member_role')->isEmpty()
+          ? trim((string) $paragraph->get('field_member_role')->value)
           : '';
 
-        // Extract start/end years
-        $start = $paragraph->hasField('field_member_start') && !$paragraph->get('field_member_start')->isEmpty() 
-          ? trim($paragraph->get('field_member_start')->value) 
+        // Extract start/end years.
+        $start = $paragraph->hasField('field_member_start') && !$paragraph->get('field_member_start')->isEmpty()
+          ? trim((string) $paragraph->get('field_member_start')->value)
           : '';
-        $end = $paragraph->hasField('field_member_end') && !$paragraph->get('field_member_end')->isEmpty() 
-          ? trim($paragraph->get('field_member_end')->value) 
+        $end = $paragraph->hasField('field_member_end') && !$paragraph->get('field_member_end')->isEmpty()
+          ? trim((string) $paragraph->get('field_member_end')->value)
           : '';
 
-        // Build the dates portion
+        // Build the dates portion.
         $date_string = '';
         if ($start && !$end) {
           $date_string = " ({$start}—)";
-        } elseif ($start && $end) {
+        }
+        elseif ($start && $end) {
           $date_string = " ({$start}-{$end})";
-        } elseif ($end) {
+        }
+        elseif ($end) {
           $date_string = " ({$end})";
         }
 
-        // Combine role and dates
+        // Combine role and dates.
         $full_text = $role . $date_string;
 
-        if (!empty($full_text)) {
+        if ($full_text !== '') {
           $clean_roles[] = $full_text;
         }
       }
     }
 
-    // Replace the entire field items render array with our clean, joined string
+    // Replace the entire field items render array with our clean, joined string.
     if (!empty($clean_roles)) {
       $variables['items'] = [
         [
           'content' => [
-            '#markup' => implode('; ', $clean_roles),
+            '#plain_text' => implode('; ', $clean_roles),
           ],
         ],
       ];
@@ -139,7 +150,7 @@ function imagine_preprocess_views_view_fields(&$variables) {
           $link_text = $link_item->title;
           
           // Construct the dynamic aria label safely
-          $aria_label = t("Visit @name's @text", ['@name' => $member_title, '@text' => $link_text]);
+          $aria_label = t("@text for @name", ['@text' => $link_text, '@name' => $member_title]);
           
           // Build the complete anchor tag
           $custom_links[] = '<a href="' . $url . '" class="imagine-btn" aria-label="' . $aria_label . '">' . $link_text . '</a>';
