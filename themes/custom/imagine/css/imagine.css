@@ -26,6 +26,12 @@
 
   --paper: #fff;
   --accent-soft: rgba(122, 0, 25, .06);
+
+  --row-pad: 1.5rem;
+  --row-radius: 1.5rem;
+  --portrait-size: 350px;
+
+  --border-radius-standard: 10px;
 }
 
 /* 2. Shared recipes --------------------------------------- */
@@ -146,31 +152,14 @@ The module CSS file renders a preview of the custom styles in the text editor.
 
 /* 6. Members view (cards + grid) -------------------------- */
 .view-display-id-current_members .view-content {
-  --gap: 1rem;
-  --row-pad: .9rem;
-  --count: 5;         /* item-count sizing hint (overridden below) */
-  --viewport-max: 5;  /* breakpoint ceiling (overridden in section 9) */
-  --cols: min(var(--count), var(--viewport-max));
-
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: var(--gap);
 }
 
-/* ≤4 items size as 1-of-4 instead of stretching; 6 and 8 balance
-   as 4+2 / 4+4. 5, 7, 9, 10+ fall through to the default of 5. */
-.view-display-id-current_members .view-content:has(> .views-row:nth-child(1):last-child),
-.view-display-id-current_members .view-content:has(> .views-row:nth-child(2):last-child),
-.view-display-id-current_members .view-content:has(> .views-row:nth-child(3):last-child),
-.view-display-id-current_members .view-content:has(> .views-row:nth-child(4):last-child),
-.view-display-id-current_members .view-content:has(> .views-row:nth-child(6):last-child),
-.view-display-id-current_members .view-content:has(> .views-row:nth-child(8):last-child) {
-  --count: 4;
-}
-
 .view-display-id-current_members .views-row {
-  flex: 0 0 calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols));
-  min-width: 0;
+  /* flex: 0 0 calc((100% - (var(--cols) - 1) * var(--gap)) / var(--cols)); */
+  /* min-width: 0; */
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -178,11 +167,13 @@ The module CSS file renders a preview of the custom styles in the text editor.
   padding: var(--row-pad);
   background: var(--paper);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--border-radius-standard);
+  box-shadow: 0 10px 30px rgba(10, 20, 35, .06);
+  margin-bottom: var(--row-pad);
 }
 
-/* Full-bleed portrait: negative margin tracks the row padding, so
-   changing --row-pad can't reopen the gap. Top corners match the card. */
+/* Mobile: full-bleed portrait across the top. Negative margin tracks
+   the row padding, so changing --row-pad can't reopen the gap. */
 .view-display-id-current_members .views-field-dl-portrait-image {
   margin: calc(-1 * var(--row-pad)) calc(-1 * var(--row-pad)) 0;
 }
@@ -193,7 +184,8 @@ The module CSS file renders a preview of the custom styles in the text editor.
   height: auto;
   aspect-ratio: 1 / 1;
   object-fit: cover;
-  border-radius: 10px 10px 0 0;
+  /* -1px so the image curve sits inside the card border. */
+  border-radius: calc(var(--border-radius-standard) - 1px) calc(var(--border-radius-standard) - 1px) 0 0;
   background: var(--accent-soft);
 }
 
@@ -319,26 +311,54 @@ The module CSS file renders a preview of the custom styles in the text editor.
    default differs (members 5, cards 6), which the :root-level
    defaults above already express, so no ≥1400px rule is needed. */
 @media (max-width: 600px) {
-  .view-display-id-current_members .view-content,
   .paragraph--type--cards { --viewport-max: 1; }
 }
 
 @media (min-width: 601px) and (max-width: 899px) {
-  .view-display-id-current_members .view-content,
   .paragraph--type--cards { --viewport-max: 2; }
 }
 
 @media (min-width: 900px) and (max-width: 1199px) {
-  .view-display-id-current_members .view-content,
   .paragraph--type--cards { --viewport-max: 3; }
 }
 
 @media (min-width: 1200px) and (max-width: 1399px) {
-  .view-display-id-current_members .view-content,
   .paragraph--type--cards { --viewport-max: 4; }
 }
 
 @media (min-width: 900px) {
+  /* Members: horizontal card — portrait left, details right. */
+  .view-display-id-current_members .views-row {
+    flex-direction: row;
+    /* align-items: flex-start; */
+    gap: var(--row-pad);
+  }
+
+  /* Portrait becomes a fixed square; the mobile full-bleed negative margins come off. */
+  .view-display-id-current_members .views-field-dl-portrait-image {
+    margin: -1.5em 0 -1.5em -1.5em;
+    display: flex;
+    flex: 0 0 var(--portrait-size);
+    min-width: 0;
+  }
+
+  .view-display-id-current_members .views-field-dl-portrait-image img {
+     width: 100%;
+    height: 100%;
+    /* Cancel the mobile 1/1 square: height is driven by the row now. */
+    aspect-ratio: auto;
+    object-fit: cover;
+    /* Portraits crop from the bottom, not the middle — keeps faces in frame when a long bio stretches the row. */
+    object-position: center 25%;
+    border-radius: var(--border-radius-standard) 0 0 var(--border-radius-standard);
+  }
+
+  /* Details take the remaining width. */
+  .view-display-id-current_members .views-row > div:last-child {
+    flex: 1;
+    min-width: 0;
+  }
+
   .paragraph--type--members-alumni-list .alumni-row {
     flex-direction: row;
     align-items: center;
