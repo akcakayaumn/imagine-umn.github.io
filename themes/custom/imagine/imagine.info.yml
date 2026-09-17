@@ -1,0 +1,21 @@
+name: 'Imagine'
+type: theme
+description: 'IMAGINE Lab Drupal theme, based on Folwell'
+base theme: folwell
+core_version_requirement: ^10 || ^11
+dependencies:
+  - responsive_menu
+libraries:
+    - 'imagine/global-styling'
+    - 'imagine/fontawesome'
+regions:
+  identity: Site Identity
+  header: Navigation
+  # mega: 'Mega menu'
+  featured: Featured
+  breadcrumb: Breadcrumb
+  sidebar_first: 'Sidebar first'
+  content: Content
+  sidebar_second: 'Sidebar second'
+  footer_top: 'Footer Top'
+  footer_bottom: 'Footer Bottom'

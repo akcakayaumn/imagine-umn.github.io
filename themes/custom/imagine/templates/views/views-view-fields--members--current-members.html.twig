@@ -1,0 +1,37 @@
+{#
+/**
+ * @file
+ * Default theme implementation to display a view of unformatted rows.
+ *
+ * Available variables:
+ * - title: The title of this group of rows. May be empty.
+ * - rows: A list of the view's row items.
+ *   - attributes: The row's HTML attributes.
+ *   - content: The row's content.
+ * - view: The view object.
+ * - default_row_class: A flag indicating whether default classes should be
+ *   used on rows.
+ *
+ * @see template_preprocess_views_view_unformatted()
+ *
+ * @ingroup themeable
+ */
+#}
+
+{% set websites = fields.field_websites.content|striptags|trim %}
+
+<div class="views-field-dl-portrait-image">
+  {{ fields.field_dl_portrait_image.content}}    
+</div>
+
+<div>
+  <h2 class="style-h3">{{ fields.title.content }}</h2>
+  <p class="margin-bottom-0">{{ fields.field_dl_email_address.content }}</p>
+  <div class="views-field-roles-dates">{{ fields.field_roles_dates.content }}</div>
+  <div class="views-field-interests">{{ fields.field_interests.content }}</div>
+  <div class="views-field-dl-biography">{{ fields.field_dl_biography.content }}</div>
+  {% if websites is not empty %}
+  <div class="views-field-websites">{{fields.field_websites.content}}</div>
+  {% endif %}
+</div>
+

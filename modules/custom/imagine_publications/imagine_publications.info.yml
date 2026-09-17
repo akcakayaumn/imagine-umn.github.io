@@ -1,0 +1,8 @@
+name: IMAGINE Publications
+type: module
+description: 'Customizations for the BibCite Publications listing.'
+core_version_requirement: ^10 || ^11
+package: Custom
+dependencies:
+  - bibcite:bibcite
+  - drupal:views

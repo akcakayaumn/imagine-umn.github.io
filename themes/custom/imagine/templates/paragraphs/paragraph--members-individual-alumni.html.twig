@@ -1,0 +1,21 @@
+
+<div class="alumni-row">
+    <div class="info">
+        <h3>{{ content.field_alumni_name.0 }}</h3>
+        <span class="style-h3">
+            &mdash;
+            {{ content.field_alumni_role.0 }} 
+            {{ content.field_alumni_years.0 }} 
+        </span>
+        {% if paragraph.field_alumni_update is not empty %}
+        <span class="updates txt-intro">
+            {{ content.field_alumni_update.0 }} 
+        </span>
+        {% endif %}
+    </div>
+
+    <div class="sites">
+    {{ content.field_alumni_websites}}
+    </div>
+
+</div>

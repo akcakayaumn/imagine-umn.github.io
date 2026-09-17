@@ -1,0 +1,10 @@
+publications:
+  version: 1.x
+  js:
+    js/publications.js: {}
+  css:
+    theme:
+      css/publications.css: {}
+  dependencies:
+    - core/drupal
+    - core/once

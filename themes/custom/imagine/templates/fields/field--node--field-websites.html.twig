@@ -1,0 +1,6 @@
+<div class="member-links">
+  {% for item in items %}
+    {# add_class appends classes to the anchor tag without overriding core link behavior #}
+      {{ item.content|add_class('imagine-btn') }}
+  {% endfor %}
+</div>

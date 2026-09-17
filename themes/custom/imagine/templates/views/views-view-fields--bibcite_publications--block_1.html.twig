@@ -1,0 +1,81 @@
+{#
+/**
+ * @file
+ * Default theme implementation to display a view of unformatted rows.
+ *
+ * Available variables:
+ * - title: The title of this group of rows. May be empty.
+ * - rows: A list of the view's row items.
+ *   - attributes: The row's HTML attributes.
+ *   - content: The row's content.
+ * - view: The view object.
+ * - default_row_class: A flag indicating whether default classes should be
+ *   used on rows.
+ *
+ * @see template_preprocess_views_view_unformatted()
+ *
+ * @ingroup themeable
+ */
+#}
+
+{% set venue_display = fields.field_bibcite_venue_displayname.content|render|striptags|trim %}
+{% set venue_name = fields.field_bibcite_venue.content|render|striptags|trim %}
+{% set year = fields.bibcite_year.content|render|striptags|trim %}
+
+
+<article class="publication">
+  <p class="publication__venue">
+    
+
+    {% if venue_display is not empty %}
+      <span class="publication__venue-display">{{ fields.field_bibcite_venue_displayname.content }}</span>
+    {% elseif venue_name is not empty %}
+      <span class="publication__venue-name">{{ fields.field_bibcite_venue.content }}</span>
+    {% endif %}
+
+    {% if year is not empty %}
+      <span class="publication__year">{{ fields.bibcite_year.content }}</span>
+    {% endif %}
+  </p>
+
+  <h2 class="publication__title">{{ fields.title.content }}</h3>
+
+  <p class="publication__authors">{{ fields.name_1.content }}</p>
+
+
+  {% if fields.bibcite_abst_e.content|render|trim %}
+    <div class="publication__abstract">{{ fields.bibcite_abst_e.content }}</div>
+  {% endif %}
+
+  <div class="pub-links">
+  {% for key, link in pub_links %}
+    <a href="{{ link.url }}"
+       class="imagine-btn pub-links__btn pub-links__btn--{{ key }}"
+       aria-label="{{ link.aria }}"
+       target="_blank"
+       rel="noopener noreferrer">{{ link.label }}</a>
+  {% endfor %}
+
+  {% if pub_bibtex %}
+    <div class="pub-bibtex" data-pub-bibtex>
+      <button type="button"
+              class="imagine-btn pub-links__btn pub-links__btn--bibtex"
+              aria-expanded="false"
+              aria-controls="{{ pub_bibtex_id }}"
+              aria-label="{{ 'BibTeX citation for: @title'|t({'@title': pub_title}) }}"
+              data-pub-bibtex-toggle>{{ 'BibTeX'|t }}</button>
+
+      <div class="pub-bibtex__panel" id="{{ pub_bibtex_id }}" data-pub-bibtex-panel>
+        <pre class="pub-bibtex__code"><code data-pub-bibtex-code>{{ pub_bibtex }}</code></pre>
+        <button type="button"
+                class="fw-btn-small"
+                aria-label="{{ 'Copy BibTeX citation for: @title'|t({'@title': pub_title}) }}"
+                data-pub-bibtex-copy
+                hidden>{{ 'Copy'|t }}</button>
+        <span class="pub-bibtex__status" role="status" data-pub-bibtex-status></span>
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+</article>
