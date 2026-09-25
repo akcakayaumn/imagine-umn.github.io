@@ -63,6 +63,10 @@ function imagine_publications_preprocess_views_view_fields(array &$variables): v
     try {
       $bibtex = trim(\Drupal::service('serializer')->serialize($entity, 'bibtex'));
       if ($bibtex !== '') {
+        // BibCite may serialize bibcite_secondary_title as "journal" even for
+        // conference papers. For @inproceedings, the correct BibTeX field is
+        // "booktitle".
+        $bibtex = imagine_publications_fix_conference_bibtex($bibtex, $entity);
         $variables['pub_bibtex'] = $bibtex;
         $variables['pub_bibtex_id'] = Html::getUniqueId('pub-bibtex-' . $entity->id());
       }
@@ -85,6 +89,54 @@ function imagine_publications_preprocess_views_view_fields(array &$variables): v
   );
 }
 
+
+/**
+ * Corrects BibCite's BibTeX output for conference papers.
+ *
+ * BibCite stores Conference Name in bibcite_secondary_title, but its serializer
+ * may emit that value as "journal". For @inproceedings, BibTeX expects
+ * "booktitle".
+ */
+function imagine_publications_fix_conference_bibtex(string $bibtex, EntityInterface $entity): string {
+  if ($entity->bundle() !== 'conference_paper') {
+    return $bibtex;
+  }
+
+  // If the serializer already produced booktitle, leave it alone.
+  if (preg_match('/^\s*booktitle\s*=/mi', $bibtex)) {
+    return $bibtex;
+  }
+
+  // In the current BibCite serializer this field is normally emitted as journal.
+  $fixed = preg_replace(
+    '/^(\s*)journal(\s*=\s*)/mi',
+    '$1booktitle$2',
+    $bibtex,
+    1,
+    $count
+  );
+
+  if ($fixed !== NULL && $count > 0) {
+    return $fixed;
+  }
+
+  // Fallback: if Conference Name exists but the serializer omitted it, insert
+  // booktitle before the final closing brace.
+  if ($entity->hasField('bibcite_secondary_title') && !$entity->get('bibcite_secondary_title')->isEmpty()) {
+    $booktitle = trim((string) $entity->get('bibcite_secondary_title')->value);
+    if ($booktitle !== '') {
+      $booktitle = str_replace(['\\', '{', '}'], ['\\\\', '\{', '\}'], $booktitle);
+      $line = "  booktitle = {" . $booktitle . "},\n";
+      $pos = strrpos($bibtex, '}');
+      if ($pos !== FALSE) {
+        return substr($bibtex, 0, $pos) . $line . substr($bibtex, $pos);
+      }
+    }
+  }
+
+  return $bibtex;
+}
+
 /**
  * Implements hook_form_alter().
  *
@@ -101,7 +153,7 @@ function imagine_publications_form_alter(array &$form, FormStateInterface $form_
   $form['imagine_publication_fields'] = [
     '#type' => 'checkbox',
     '#title' => t('Populate IMAGINE custom publication fields from BibTeX'),
-    '#description' => t('Reads venue, venue_display, code, pdf, and journal_link (including common aliases) from .bib entries and stores them in the custom IMAGINE fields.'),
+    '#description' => t('Reads venue, venue_display, code, pdf, journal_link, and booktitle from .bib entries. IMAGINE fields are populated, and booktitle is stored as the BibCite Conference Name for conference papers.'),
     '#default_value' => TRUE,
     '#weight' => 90,
   ];
@@ -147,6 +199,10 @@ function imagine_publications_capture_bibtex_custom_fields(array &$form, FormSta
       ]),
       'journal_link' => imagine_publications_first_bibtex_field($fields, [
         'journal_link', 'journallink', 'publisher_link', 'publisherlink',
+      ]),
+      // BibCite's built-in Conference Name field is bibcite_secondary_title.
+      'conference_name' => imagine_publications_first_bibtex_field($fields, [
+        'booktitle',
       ]),
     ];
 
@@ -218,6 +274,16 @@ function imagine_publications_apply_bibtex_custom_fields_batch(array $metadata, 
     $changed = imagine_publications_set_link_field($reference, 'field_bibcite_code_link', $custom['code']) || $changed;
     $changed = imagine_publications_set_link_field($reference, 'field_bibcite_pdf_link', $custom['pdf']) || $changed;
     $changed = imagine_publications_set_link_field($reference, 'field_bibcite_journal_link', $custom['journal_link']) || $changed;
+
+    // For conference papers, preserve BibTeX booktitle in BibCite's existing
+    // Conference Name field.
+    if ($reference->bundle() === 'conference_paper') {
+      $changed = imagine_publications_set_text_field(
+        $reference,
+        'bibcite_secondary_title',
+        $custom['conference_name'] ?? NULL
+      ) || $changed;
+    }
 
     if ($changed) {
       try {
@@ -460,7 +526,7 @@ function imagine_publications_first_bibtex_field(array $fields, array $aliases):
  * Lightweight BibTeX parser for entry-level metadata.
  *
  * This is deliberately not a replacement for BibCite's parser. It only reads
- * enough of the source file to preserve the five IMAGINE-specific fields.
+ * enough of the source file to preserve the IMAGINE-specific fields and conference booktitle.
  * BibCite still performs the actual bibliography import.
  */
 function imagine_publications_parse_bibtex(string $bibtex): array {
