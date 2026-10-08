@@ -531,7 +531,6 @@ function imagine_publications_first_bibtex_field(array $fields, array $aliases):
  */
 function imagine_publications_parse_bibtex(string $bibtex): array {
   $entries = [];
-  $strings = [];
   $length = strlen($bibtex);
   $i = 0;
 
@@ -592,19 +591,11 @@ function imagine_publications_parse_bibtex(string $bibtex): array {
       break;
     }
 
+    if (in_array($type, ['string', 'comment', 'preamble'], TRUE)) {
+      continue;
+    }
+
     $body = substr($bibtex, $body_start, ($i - 1) - $body_start);
-
-    // Keep @String definitions so bare values such as booktitle = NIPS
-    // resolve before being copied into BibCite's Conference Name field.
-    if ($type === 'string') {
-      $strings = array_replace($strings, imagine_publications_parse_bibtex_fields($body, $strings));
-      continue;
-    }
-
-    if (in_array($type, ['comment', 'preamble'], TRUE)) {
-      continue;
-    }
-
     [$key, $field_text] = imagine_publications_split_bibtex_key_and_fields($body);
     if ($key === '') {
       continue;
@@ -613,7 +604,7 @@ function imagine_publications_parse_bibtex(string $bibtex): array {
     $entries[] = [
       'type' => $type,
       'key' => $key,
-      'fields' => imagine_publications_parse_bibtex_fields($field_text, $strings),
+      'fields' => imagine_publications_parse_bibtex_fields($field_text),
     ];
   }
 
@@ -663,7 +654,7 @@ function imagine_publications_split_bibtex_key_and_fields(string $body): array {
 /**
  * Parses top-level name=value pairs from a BibTeX entry body.
  */
-function imagine_publications_parse_bibtex_fields(string $text, array $strings = []): array {
+function imagine_publications_parse_bibtex_fields(string $text): array {
   $fields = [];
   $length = strlen($text);
   $i = 0;
@@ -697,19 +688,7 @@ function imagine_publications_parse_bibtex_fields(string $text, array $strings =
     }
 
     [$raw_value, $i] = imagine_publications_read_bibtex_value($text, $i);
-    $clean_value = imagine_publications_clean_bibtex_value($raw_value);
-    $trimmed_raw = trim($raw_value);
-
-    // BibTeX macro names are case-insensitive. Braced and quoted values are
-    // literals, so {NIPS} and "NIPS" must remain unchanged.
-    if ($trimmed_raw !== '' && $trimmed_raw[0] !== '{' && $trimmed_raw[0] !== '"') {
-      $macro = strtolower($trimmed_raw);
-      if (isset($strings[$macro])) {
-        $clean_value = $strings[$macro];
-      }
-    }
-
-    $fields[$name] = $clean_value;
+    $fields[$name] = imagine_publications_clean_bibtex_value($raw_value);
   }
 
   return $fields;
